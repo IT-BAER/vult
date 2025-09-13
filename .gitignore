@@ -1,0 +1,76 @@
+# Pentest Launcher - Git Ignore File
+
+# Log files
+logs/
+*.log
+
+# SSH keys and sensitive files
+*.pem
+*.key
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Configuration files with credentials
+.pentest_config
+config.local
+*.conf
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.Trash/
+Desktop.ini
+
+# Windows
+$RECYCLE.BIN/
+*.stackdump
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.nfs*
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Archives
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+
+# Test files
+test_*
+*.test
+debug_*
+
+# Local customizations
+local/
+custom/
+personal/
