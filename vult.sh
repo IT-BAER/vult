@@ -24,6 +24,7 @@ SSH Connection Options (ignored if --local is used):
 
 Other Options:
   --debug                 Enable debug output showing execution details
+  --force-interface       Force interface isolation even if it might disconnect SSH
   --cleanup-namespaces    Clean up orphaned network namespaces
 
 Note: Log files are automatically cleaned up to keep only the latest 50 scan logs.
@@ -87,6 +88,11 @@ Examples:
   bash vult.sh --local --tool nuclei --target https://example.com --args "-t cves/"
 
   # Remote Execution (from Windows/other systems via SSH)
+  
+  # SSH Protection Note:
+  # When running via SSH, vult.sh automatically detects your SSH interface and
+  # prevents isolating it (which would disconnect your session). Use --force-interface
+  # to override this protection if needed.
   bash vult.sh --tool quick-discovery --target 10.10.30.0/24 --iface eth0
   bash vult.sh --tool masscan --target 10.10.30.0/24 --ports 80,443,22
   bash vult.sh --tool rustscan --target 10.10.30.5
@@ -479,10 +485,83 @@ cleanup_orphaned_namespaces() {
   fi
 }
 
+# ---- SSH Connection Protection Function ----
+get_ssh_interface() {
+  # Detect if we're in an SSH session and which interface it's using
+  if [[ -n "$SSH_CONNECTION" ]]; then
+    local ssh_client_ip=$(echo $SSH_CONNECTION | awk '{print $1}')
+    local ssh_server_ip=$(echo $SSH_CONNECTION | awk '{print $3}')
+    
+    # Find which interface has the SSH server IP
+    local ssh_interface=$(ip route get $ssh_client_ip 2>/dev/null | grep -oP 'dev \K\S+' | head -1)
+    
+    if [[ -n "$ssh_interface" ]]; then
+      echo "[INFO] Detected SSH session on interface: $ssh_interface (client: $ssh_client_ip -> server: $ssh_server_ip)" >&2
+      echo "$ssh_interface"
+      return 0
+    fi
+  fi
+  
+  # Alternative: Check if parent process is sshd
+  local parent_comm=$(ps -o comm= -p $PPID 2>/dev/null || echo "")
+  if [[ "$parent_comm" == *"sshd"* ]]; then
+    # Get the interface for default route as fallback
+    local default_iface=$(ip route | grep '^default' | head -1 | grep -oP 'dev \K\S+')
+    if [[ -n "$default_iface" ]]; then
+      echo "[INFO] Detected SSH session (via sshd parent), using default interface: $default_iface" >&2
+      echo "$default_iface"
+      return 0
+    fi
+  fi
+  
+  # Check for common SSH-related environment variables
+  if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+    local default_iface=$(ip route | grep '^default' | head -1 | grep -oP 'dev \K\S+')
+    if [[ -n "$default_iface" ]]; then
+      echo "[INFO] Detected SSH session (via SSH env vars), using default interface: $default_iface" >&2
+      echo "$default_iface"
+      return 0
+    fi
+  fi
+  
+  # Check if we're connected via a terminal that looks like SSH
+  if [[ "$TERM" == *"xterm"* ]] && [[ -n "$SSH_AUTH_SOCK" ]]; then
+    local default_iface=$(ip route | grep '^default' | head -1 | grep -oP 'dev \K\S+')
+    if [[ -n "$default_iface" ]]; then
+      echo "[INFO] Detected likely SSH session (via terminal and auth sock), using default interface: $default_iface" >&2
+      echo "$default_iface"
+      return 0
+    fi
+  fi
+  
+  return 1
+}
+
 # ---- Network Namespace Execution Function ----
 exec_in_netns() {
   local iface="$1"
   local cmd="$2"
+  
+  # Check if the requested interface is being used by our SSH connection
+  local ssh_interface=""
+  if ssh_interface=$(get_ssh_interface 2>/dev/null); then
+    if [[ "$iface" == "$ssh_interface" ]]; then
+      if [[ "$FORCE_INTERFACE" != "true" ]]; then
+        echo "[WARN] Cannot isolate interface '$iface' - it's currently being used by your SSH connection!"
+        echo "[WARN] This would disconnect your SSH session. Running command without interface isolation."
+        echo "[INFO] To force interface isolation (and potentially disconnect SSH), use --force-interface flag."
+        
+        # Execute command normally without namespace isolation
+        eval "$cmd"
+        return
+      else
+        echo "[WARN] Forcing interface isolation on SSH interface '$iface' - this may disconnect your session!"
+        echo "[INFO] Proceeding with --force-interface flag..."
+      fi
+    else
+      echo "[INFO] SSH connection detected on '$ssh_interface', isolating '$iface' safely"
+    fi
+  fi
   
   # Check for and cleanup any orphaned namespaces from previous interrupted executions
   cleanup_orphaned_namespaces

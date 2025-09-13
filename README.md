@@ -27,6 +27,7 @@ Simple wrapper for running 30+ security & vulnerability scanning tools locally o
 - **30+ Security Tools**: Comprehensive collection of network, web, vulnerability, and forensics tools
 - **Local & Remote Execution**: Run tools locally (`--local`) or on remote pentest boxes via SSH
 - **Network Namespace Isolation**: Isolates tools to specific network interfaces
+- **SSH Connection Protection**: Automatically prevents interface isolation that would disconnect your SSH session
 - **Auto Dependency Management**: Installs missing tools automatically
 - **Cross-Platform**: Bash (Linux) and PowerShell (Windows) versions
 - **Log Management**: Keeps last 50 scan logs, auto-cleanup
@@ -215,6 +216,7 @@ chmod +x vult.sh
 - `--tool <name>` - Security tool to run
 - `--target <target>` - Target IP/URL/network
 - `--iface <interface>` - Network interface for isolation
+- `--force-interface` - Force interface isolation even if it might disconnect SSH
 - `--args "<args>"` - Custom tool arguments
 - `--ssh-host <host>` - Remote SSH host
 - `--ssh-user <user>` - SSH username
@@ -421,6 +423,13 @@ tail -f logs/scan_$(date +%Y%m%d)*.log
 
 
 ## 🔒 Security Considerations
+
+### SSH Connection Protection
+- **Automatic Detection**: Vult automatically detects when you're connected via SSH
+- **Interface Protection**: Prevents isolating network interfaces used by your SSH connection
+- **Safe Fallback**: Commands run without namespace isolation if SSH interface is detected
+- **Override Option**: Use `--force-interface` flag to override protection (may disconnect SSH)
+- **Multi-Interface Support**: Works safely with multiple network interfaces
 
 ### Best Practices
 - **SSH Key Security**: Use dedicated SSH keys with strong passphrases
