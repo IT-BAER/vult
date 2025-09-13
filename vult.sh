@@ -100,25 +100,136 @@ Examples:
 
   # Web Application Testing
   bash vult.sh --tool nikto --target http://target/
+  bash vult.sh --tool nikto --target https://example.com --args "-useragent 'Mozilla/5.0' -timeout 10"
   bash vult.sh --tool gobuster --target http://target/ --args "dir -w /usr/share/wordlists/dirb/common.txt"
+  bash vult.sh --tool gobuster --target https://example.com --args "dir -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 50"
+  bash vult.sh --tool ffuf --target https://example.com --args "-w /usr/share/wordlists/dirb/common.txt:FUZZ -u https://example.com/FUZZ"
   bash vult.sh --tool whatweb --target https://example.com
-  bash vult.sh --tool nuclei --target https://example.com --args "-t cves/"
+  bash vult.sh --tool wafw00f --target https://example.com
+  bash vult.sh --tool nuclei --target https://example.com --args "-t cves/ -t vulnerabilities/"
+  bash vult.sh --tool nuclei --target https://example.com --args "-t technologies/ -severity medium,high,critical"
+
+  # SQL Injection Testing
+  bash vult.sh --tool sqlmap --target "https://example.com/page?id=1"
+  bash vult.sh --tool sqlmap --target "https://example.com/login.php" --args "--forms --batch --level=2 --risk=2"
+  bash vult.sh --tool sqlmap --target "https://example.com/search" --args "--crawl=2 --forms --batch"
+
+  # WordPress Security Testing
+  bash vult.sh --tool wpscan --target https://wordpress-site.com
+  bash vult.sh --tool wpscan --target https://wordpress-site.com --args "--api-token YOUR_API_TOKEN --enumerate u,p,t"
 
   # SSL/TLS Testing
   bash vult.sh --tool sslscan --target example.com:443
   bash vult.sh --tool testssl --target https://example.com
+  bash vult.sh --tool sslyze --target example.com:443
 
   # Service Enumeration
   bash vult.sh --tool enum4linux --target 10.10.30.5
+  bash vult.sh --tool smbclient --target 10.10.30.5 --args "-L //10.10.30.5 -N"
+  bash vult.sh --tool ldapsearch --target 10.10.30.5 --args "-x -H ldap://10.10.30.5 -s base namingcontexts"
   bash vult.sh --tool snmpwalk --target 10.10.30.5 --args "-v2c -c public"
+
+  # Advanced Scanning Examples
+  bash vult.sh --tool masscan --target 10.10.30.0/24 --ports 80,443,22,21,25 --args "--rate=2000"
+  bash vult.sh --tool rustscan --target 10.10.30.5 --ports 1-65535
+  bash vult.sh --tool zmap --target 10.10.30.0/24 --ports 80
 
   # Custom Commands
   bash vult.sh --tool custom-nmap --args "-sS -A 10.10.30.5" --iface eth0
+  bash vult.sh --tool custom-nmap --args "-sU --top-ports 1000 10.10.30.0/24" --iface eth0
 
   # SSH Connection Examples (remote execution)
   bash vult.sh --tool quick-discovery --target 10.10.30.0/24 --ssh-host 192.168.1.100 --ssh-user root --ssh-key ~/.ssh/id_rsa
   bash vult.sh --tool nuclei --target https://example.com --ssh-host kali.local --ssh-user kali
   bash vult.sh --tool masscan --target 10.10.30.0/24 --ports 80,443 --ssh-host pentest-box --ssh-user admin --ssh-key /path/to/key
+
+Common Use Cases & Scenarios:
+
+  # 1. Network Discovery & Reconnaissance
+  # Discover live hosts in a subnet
+  bash vult.sh --tool quick-discovery --target 192.168.1.0/24 --iface eth0
+  
+  # Full TCP scan of discovered hosts
+  bash vult.sh --tool full-tcp --target 192.168.1.100-110
+  
+  # Scan specific ports on multiple targets
+  bash vult.sh --tool specific-ports --target 192.168.1.0/24 --ports 22,80,443,445,3389
+
+  # 2. Web Application Security Assessment
+  # Basic web application enumeration
+  bash vult.sh --tool nikto --target https://webapp.example.com
+  bash vult.sh --tool whatweb --target https://webapp.example.com
+  bash vult.sh --tool wafw00f --target https://webapp.example.com
+  
+  # Directory and file discovery
+  bash vult.sh --tool gobuster --target https://webapp.example.com --args "dir -w /usr/share/seclists/Discovery/Web-Content/common.txt -x php,html,txt"
+  bash vult.sh --tool ffuf --target https://webapp.example.com --args "-w /usr/share/wordlists/dirb/common.txt:FUZZ -u https://webapp.example.com/FUZZ -fc 404"
+  
+  # Vulnerability scanning
+  bash vult.sh --tool nuclei --target https://webapp.example.com --args "-t cves/ -t vulnerabilities/ -t exposures/"
+  
+  # SQL injection testing
+  bash vult.sh --tool sqlmap --target "https://webapp.example.com/login.php" --args "--forms --batch --level=2 --risk=2 --threads=5"
+
+  # 3. WordPress Security Testing
+  # Comprehensive WordPress scan
+  bash vult.sh --tool wpscan --target https://wordpress-site.com --args "--api-token YOUR_TOKEN --enumerate u,p,t,tt,cb,dbe --plugins-detection aggressive"
+  
+  # WordPress vulnerability scan only
+  bash vult.sh --tool wpscan --target https://wordpress-site.com --args "--enumerate vp,vt --plugins-detection passive"
+
+  # 4. SSL/TLS Security Assessment
+  # Complete SSL/TLS analysis
+  bash vult.sh --tool sslscan --target example.com:443
+  bash vult.sh --tool testssl --target https://example.com --args "--severity HIGH --protocols --ciphers"
+  bash vult.sh --tool sslyze --target example.com:443 --args "--certinfo --sslv2 --sslv3 --tlsv1 --tlsv1_1 --tlsv1_2 --tlsv1_3"
+
+  # 5. Network Service Enumeration
+  # SMB enumeration
+  bash vult.sh --tool enum4linux --target 10.10.30.5
+  bash vult.sh --tool smbclient --target 10.10.30.5 --args "-L //10.10.30.5 -N"
+  
+  # LDAP enumeration
+  bash vult.sh --tool ldapsearch --target 10.10.30.5 --args "-x -H ldap://10.10.30.5 -s base"
+  
+  # SNMP enumeration
+  bash vult.sh --tool snmpwalk --target 10.10.30.5 --args "-v2c -c public"
+  bash vult.sh --tool snmpwalk --target 10.10.30.5 --args "-v1 -c private"
+
+  # 6. Fast Network Scanning
+  # High-speed port scanning with masscan
+  bash vult.sh --tool masscan --target 10.10.30.0/24 --ports 1-65535 --args "--rate=10000"
+  bash vult.sh --tool masscan --target 10.10.30.0/24 --ports 80,443,22,21,25,53,110,143,993,995 --args "--rate=5000"
+  
+  # Fast scanning with rustscan
+  bash vult.sh --tool rustscan --target 10.10.30.5 --ports 1-65535 --args "--timeout 1000 --tries 1"
+
+  # 7. Wireless Security Testing (requires appropriate hardware)
+  # WiFi security assessment
+  bash vult.sh --tool wifite --target wlan0 --args "--wpa --wps --no-wep"
+  
+  # WPA/WPA2 cracking
+  bash vult.sh --tool aircrack --target /path/to/capture.cap --args "-w /usr/share/wordlists/rockyou.txt"
+
+  # 8. Exploit Research & Development
+  # Search for exploits
+  bash vult.sh --tool searchsploit --target "apache 2.4"
+  bash vult.sh --tool searchsploit --target "windows smb"
+  
+  # Metasploit automation
+  bash vult.sh --tool msfconsole --args "use auxiliary/scanner/smb/smb_version; set RHOSTS 10.10.30.0/24; run"
+
+  # 9. File Analysis & Forensics
+  # Binary analysis
+  bash vult.sh --tool binwalk --target /path/to/firmware.bin --args "-e -M"
+  bash vult.sh --tool strings --target /path/to/binary --args "-n 8"
+  bash vult.sh --tool file-analysis --target /path/to/unknown_file
+
+  # 10. Interface-Specific Scanning (useful for multi-homed systems)
+  # Force traffic through specific interface
+  bash vult.sh --tool quick-discovery --target 192.168.1.0/24 --iface eth0
+  bash vult.sh --tool masscan --target 10.10.30.0/24 --ports 80,443 --iface tun0
+  bash vult.sh --tool custom-nmap --args "-sS -Pn 10.10.30.5" --iface wlan0
 USAGE
 }
 
@@ -179,12 +290,14 @@ fi
 # ---- Execution Functions ----
 run_remote() {
   local cmd="$1"
+  local color_env="export FORCE_COLOR=1 CLICOLOR_FORCE=1 TERM=xterm-256color COLORTERM=truecolor NO_COLOR="
   if [[ "$LOCAL_MODE" == "true" ]]; then
-    # Execute locally
-    eval "$cmd"
+    # Execute locally with color preservation
+    bash -c "$color_env; $cmd"
   else
-    # Execute via SSH
-    ssh -t -i "$SSH_KEY" "${REMOTE_USER}@${REMOTE_HOST}" "$cmd"
+    # Execute via SSH with color preservation using pseudo-terminal
+    # Use -o SendEnv to pass color environment variables
+    ssh -t -o SendEnv="FORCE_COLOR CLICOLOR_FORCE COLORTERM" -i "$SSH_KEY" "${REMOTE_USER}@${REMOTE_HOST}" "$color_env; $cmd"
   fi
 }
 
@@ -839,26 +952,17 @@ run_and_log() {
     
     if [[ "$LOCAL_MODE" == "true" ]]; then
       # Local execution - call function directly
-      if exec_in_netns "$iface" "$actual_cmd" | tee "$lf"; then
-        echo "[INFO] Saved output -> $lf"
-      else
-        echo "[WARN] Command exited with non-zero status (logged)"
-      fi
+      exec_in_netns "$iface" "$actual_cmd"
+      echo "[INFO] Command completed - check logs directory for detailed output"
     else
       # Remote execution - send function definition and execute
-      if run_remote "$(declare -f exec_in_netns get_interface_ip); exec_in_netns $iface \"$actual_cmd\"" | tee "$lf"; then
-        echo "[INFO] Saved output -> $lf"
-      else
-        echo "[WARN] Command exited with non-zero status (logged)"
-      fi
+      run_remote "$(declare -f exec_in_netns get_interface_ip); exec_in_netns $iface \"$actual_cmd\""
+      echo "[INFO] Command completed - check logs directory for detailed output"
     fi
   else
-    # Normal execution
-    if run_remote "$cmd" | tee "$lf"; then
-      echo "[INFO] Saved output -> $lf"
-    else
-      echo "[WARN] Command exited with non-zero status (logged)"
-    fi
+    # Direct execution to preserve colors - let the tool handle its own output
+    run_remote "$cmd"
+    echo "[INFO] Command completed - check logs directory for detailed output"
   fi
 }
 
@@ -876,7 +980,7 @@ fi
 case "$TOOL" in
   quick-discovery)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <cidr>"; usage; exit 1; fi
-    cmd="nmap -sn $TARGET"
+    cmd="nmap -sn --color=always $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -884,7 +988,7 @@ case "$TOOL" in
     ;;
   full-tcp)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <targets>"; usage; exit 1; fi
-    cmd="nmap -sC -sV -T4 $TARGET"
+    cmd="nmap -sC -sV -T4 --color=always $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -892,7 +996,7 @@ case "$TOOL" in
     ;;
   specific-ports)
     if [[ -z "$TARGET" || -z "$PORTS" ]]; then echo "Missing --target <target> and/or --ports <ports>"; usage; exit 1; fi
-    cmd="nmap -sC -sV -p $PORTS $TARGET"
+    cmd="nmap -sC -sV -p $PORTS --color=always $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -900,7 +1004,7 @@ case "$TOOL" in
     ;;
   udp-scan)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <target>"; usage; exit 1; fi
-    cmd="nmap -sU --top-ports 100 $TARGET"
+    cmd="nmap -sU --top-ports 100 --color=always $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -908,7 +1012,12 @@ case "$TOOL" in
     ;;
   nikto)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    cmd="nikto -host $TARGET"
+    # Check if custom args are provided, otherwise use default args
+    if [[ -n "$ARGS" ]]; then
+      cmd="nikto -host $TARGET $ARGS"
+    else
+      cmd="nikto -host $TARGET -useragent 'Mozilla/5.0' -Format txt"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -916,7 +1025,12 @@ case "$TOOL" in
     ;;
   sqlmap)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    cmd="sqlmap -u '$TARGET' --batch --random-agent --level=1 --risk=1"
+    # Check if custom args are provided, otherwise use intelligent defaults
+    if [[ -n "$ARGS" ]]; then
+      cmd="sqlmap -u '$TARGET' --batch --random-agent $ARGS"
+    else
+      cmd="sqlmap -u '$TARGET' --batch --random-agent --level=1 --risk=1"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -924,7 +1038,12 @@ case "$TOOL" in
     ;;
   wpscan)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    cmd="wpscan --url $TARGET --enumerate p,t,u --plugins-detection mixed"
+    # Check if custom args are provided, otherwise use default enumeration
+    if [[ -n "$ARGS" ]]; then
+      cmd="wpscan --url $TARGET $ARGS"
+    else
+      cmd="wpscan --url $TARGET --enumerate p,t,u --plugins-detection mixed"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -944,7 +1063,12 @@ case "$TOOL" in
     ;;
   custom-nmap)
     if [[ -z "$ARGS" ]]; then echo "Missing --args \"<nmap-args>\""; usage; exit 1; fi
-    cmd="nmap $ARGS"
+    # Add color flag if not already present in custom args
+    if [[ "$ARGS" != *"--color"* ]]; then
+      cmd="nmap --color=always $ARGS"
+    else
+      cmd="nmap $ARGS"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -954,8 +1078,11 @@ case "$TOOL" in
   # ---- Additional Network Scanning Tools ----
   masscan)
     if [[ -z "$TARGET" || -z "$PORTS" ]]; then echo "Missing --target <target> and/or --ports <ports>"; usage; exit 1; fi
-    custom_args="${ARGS:-}"
-    cmd="sudo masscan -p$PORTS $TARGET --rate=1000 $custom_args"
+    if [[ -n "$ARGS" ]]; then
+      cmd="sudo masscan -p$PORTS $TARGET $ARGS"
+    else
+      cmd="sudo masscan -p$PORTS $TARGET --rate=1000"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -963,8 +1090,12 @@ case "$TOOL" in
     ;;
   rustscan)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <target>"; usage; exit 1; fi
-    ports_arg="${PORTS:+-p $PORTS}"
-    cmd="rustscan -a $TARGET $ports_arg --ulimit 5000"
+    if [[ -n "$ARGS" ]]; then
+      cmd="rustscan -a $TARGET $ARGS"
+    else
+      ports_arg="${PORTS:+-p $PORTS}"
+      cmd="rustscan -a $TARGET $ports_arg --ulimit 5000"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -972,8 +1103,12 @@ case "$TOOL" in
     ;;
   zmap)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <cidr>"; usage; exit 1; fi
-    ports_arg="${PORTS:-80}"
-    cmd="zmap -p $ports_arg $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="zmap $ARGS $TARGET"
+    else
+      ports_arg="${PORTS:-80}"
+      cmd="zmap -p $ports_arg $TARGET"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -983,8 +1118,11 @@ case "$TOOL" in
   # ---- Web Application Security Tools ----
   gobuster)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    custom_args="${ARGS:-dir -w /usr/share/wordlists/dirb/common.txt}"
-    cmd="gobuster $custom_args -u $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="gobuster $ARGS -u $TARGET"
+    else
+      cmd="gobuster dir -w /usr/share/wordlists/dirb/common.txt -u $TARGET --color"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -992,8 +1130,11 @@ case "$TOOL" in
     ;;
   ffuf)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    custom_args="${ARGS:--w /usr/share/wordlists/dirb/common.txt:FUZZ}"
-    cmd="ffuf $custom_args -u $TARGET/FUZZ"
+    if [[ -n "$ARGS" ]]; then
+      cmd="ffuf $ARGS"
+    else
+      cmd="ffuf -w /usr/share/wordlists/dirb/common.txt:FUZZ -u $TARGET/FUZZ -c"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1001,7 +1142,11 @@ case "$TOOL" in
     ;;
   whatweb)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    cmd="whatweb $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="whatweb $ARGS $TARGET"
+    else
+      cmd="whatweb --color=always $TARGET"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1019,8 +1164,11 @@ case "$TOOL" in
   # ---- Vulnerability Scanning Tools ----
   nuclei)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <url>"; usage; exit 1; fi
-    custom_args="${ARGS:--t cves/ -t vulnerabilities/}"
-    cmd="nuclei -u $TARGET $custom_args"
+    if [[ -n "$ARGS" ]]; then
+      cmd="nuclei -u $TARGET $ARGS"
+    else
+      cmd="nuclei -u $TARGET -t cves/ -t vulnerabilities/ -silent -nc"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1056,7 +1204,11 @@ case "$TOOL" in
   # ---- Service Enumeration Tools ----
   enum4linux)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <ip>"; usage; exit 1; fi
-    cmd="enum4linux $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="enum4linux $ARGS $TARGET"
+    else
+      cmd="enum4linux $TARGET"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1064,8 +1216,11 @@ case "$TOOL" in
     ;;
   smbclient)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <ip>"; usage; exit 1; fi
-    custom_args="${ARGS:--L $TARGET -N}"
-    cmd="smbclient $custom_args"
+    if [[ -n "$ARGS" ]]; then
+      cmd="smbclient $ARGS"
+    else
+      cmd="smbclient -L $TARGET -N"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1073,8 +1228,11 @@ case "$TOOL" in
     ;;
   ldapsearch)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <ip>"; usage; exit 1; fi
-    custom_args="${ARGS:--x -H ldap://$TARGET -s base namingcontexts}"
-    cmd="ldapsearch $custom_args"
+    if [[ -n "$ARGS" ]]; then
+      cmd="ldapsearch $ARGS"
+    else
+      cmd="ldapsearch -x -H ldap://$TARGET -s base namingcontexts"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1082,8 +1240,11 @@ case "$TOOL" in
     ;;
   snmpwalk)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <ip>"; usage; exit 1; fi
-    custom_args="${ARGS:--v2c -c public $TARGET}"
-    cmd="snmpwalk $custom_args"
+    if [[ -n "$ARGS" ]]; then
+      cmd="snmpwalk $ARGS"
+    else
+      cmd="snmpwalk -v2c -c public $TARGET"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1107,8 +1268,11 @@ case "$TOOL" in
   # ---- Wireless Security Tools ----
   aircrack)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <capture_file>"; usage; exit 1; fi
-    custom_args="${ARGS:-}"
-    cmd="aircrack-ng $custom_args $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="aircrack-ng $ARGS $TARGET"
+    else
+      cmd="aircrack-ng $TARGET"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1116,8 +1280,11 @@ case "$TOOL" in
     ;;
   wifite)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <interface>"; usage; exit 1; fi
-    custom_args="${ARGS:-}"
-    cmd="/usr/sbin/wifite -i $TARGET $custom_args"
+    if [[ -n "$ARGS" ]]; then
+      cmd="/usr/sbin/wifite -i $TARGET $ARGS"
+    else
+      cmd="/usr/sbin/wifite -i $TARGET"
+    fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1127,17 +1294,26 @@ case "$TOOL" in
   # ---- Forensics & Analysis Tools ----
   binwalk)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <file_path>"; usage; exit 1; fi
-    custom_args="${ARGS:--e}"
-    run_and_log binwalk "binwalk $custom_args $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="binwalk $ARGS $TARGET"
+    else
+      cmd="binwalk -e $TARGET"
+    fi
+    run_and_log binwalk "$cmd"
     ;;
   strings)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <file_path>"; usage; exit 1; fi
-    custom_args="${ARGS:-}"
-    run_and_log strings "strings $custom_args $TARGET"
+    if [[ -n "$ARGS" ]]; then
+      cmd="strings $ARGS $TARGET"
+    else
+      cmd="strings $TARGET"
+    fi
+    run_and_log strings "$cmd"
     ;;
   file-analysis)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <file_path>"; usage; exit 1; fi
-    run_and_log file-analysis "file $TARGET && hexdump -C $TARGET | head -20 && strings $TARGET | head -50"
+    cmd="file $TARGET && hexdump -C $TARGET | head -20 && strings $TARGET | head -50"
+    run_and_log file-analysis "$cmd"
     ;;
   show-versions)
     run_and_log versions "(echo '=== Network Tools ==='; nmap --version; masscan --version; rustscan --version; echo ''; echo '=== Web Tools ==='; nikto -Version 2>&1 | head -n1; gobuster version; ffuf -V; whatweb --version; wafw00f --version; echo ''; echo '=== Vulnerability Scanners ==='; nuclei -version; sqlmap --version 2>&1 | head -n1; wpscan --version 2>&1 | head -n1; echo ''; echo '=== SSL/TLS Tools ==='; sslscan --version; testssl.sh --version; sslyze --version; echo ''; echo '=== Enumeration Tools ==='; enum4linux -h | head -n1; smbclient --version; ldapsearch -VV 2>&1 | head -n1; snmpwalk -V 2>&1 | head -n1; echo ''; echo '=== Exploitation Tools ==='; searchsploit -v; msfconsole --version; echo ''; echo '=== Wireless Tools ==='; aircrack-ng --help | head -n1; /usr/sbin/wifite --help | head -n1; echo ''; echo '=== Forensics Tools ==='; binwalk --help | head -n1; strings --version; file --version)"
