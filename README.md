@@ -12,11 +12,12 @@ Simple wrapper for running 30+ security & vulnerability scanning tools locally o
 ## 📚 Table of Contents
 
 [✨ Features](#-features) • [📋 Requirements](#-requirements) •
-[🛠️ Installation](#️-installation)
-• [📖 Usage](#-usage)
-• [🔧 Common Commands](#-common-commands)
-• [📝 License](#-license)
-• [⚠️ Disclaimer](#️-disclaimer)
+[🛠️ Installation](#️-installation) • [📖 Usage](#-usage) •
+[🔧 Common Commands](#-common-commands) • [⚙️ Configuration](#️-configuration) •
+[🏗️ Architecture](#️-architecture) • [📁 Project Structure](#-project-structure) •
+[🔧 Troubleshooting](#-troubleshooting) • [🔒 Security Considerations](#-security-considerations) •
+[🤝 Contributing](#-contributing) • [📝 License](#-license) •
+[💜 Support Development](#-support-development) • [⚠️ Disclaimer](#️-disclaimer)
 
 </div>
 
@@ -46,28 +47,37 @@ chmod +x vult.sh
 
 ## 📖 Usage
 
-### Local Execution (Kali/pentest box)
-```bash
-# Run nmap scan locally
-./vult.sh --local --tool nmap --target 192.168.1.1 --args "-sV -p 80,443"
+### Basic Syntax
 
-# Quick network discovery
-./vult.sh --local --tool arp-scan --target 192.168.1.0/24 --iface eth0
+#### Bash (Local Execution on Kali/Pentest Systems)
+```bash
+./vult.sh --local --tool <tool> [--target <target>] [--iface <interface>]
 ```
 
-### Remote Execution (via SSH)
+#### Bash (Remote Execution via SSH)
 ```bash
-# Run nikto scan on remote box
-./vult.sh --tool nikto --target https://example.com --ssh-host 10.0.1.100 --ssh-user kali --ssh-key ~/.ssh/id_rsa
-
-# Port scan with interface isolation
-./vult.sh --tool nmap --target 10.0.1.1 --iface eth1 --ssh-host pentest-box
+./vult.sh --tool <tool> [--target <target>] [--iface <interface>] [--ssh-host <host>] [--ssh-user <user>] [--ssh-key <path>]
 ```
 
-### PowerShell (Windows)
+#### PowerShell (Always Remote via SSH)
 ```powershell
-# Remote execution only
-.\vult.ps1 -Tool nmap -Target "192.168.1.1" -Args "-sV" -SshHost "10.0.1.100" -SshUser "kali"
+.\vult.ps1 -Tool <tool> [-Target <target>] [-Iface <interface>] [-SshHost <host>] [-SshUser <user>] [-SshKey <path>]
+```
+
+### Execution Modes
+
+**🖥️ Local Execution (use --local flag)**
+```bash
+# Run directly on Kali/pentest systems
+./vult.sh --local --tool nikto --target https://example.com
+./vult.sh --local --tool quick-discovery --target 10.0.1.0/24 --iface eth0
+```
+
+**📡 Remote Execution (default)**
+```bash
+# Run via SSH from any system
+./vult.sh --tool nikto --target https://example.com --ssh-host kali-box
+./vult.sh --tool quick-discovery --target 10.0.1.0/24 --iface eth0
 ```
 
 ### Available Tools
@@ -121,145 +131,6 @@ chmod +x vult.sh
 
 **Utility:**
 - `show-versions` - Display all tool versions
-
-### Options
-- `--local` - Run locally (default: remote via SSH)
-- `--tool <name>` - Security tool to run
-- `--target <target>` - Target IP/URL/network
-- `--iface <interface>` - Network interface for isolation
-- `--args "<args>"` - Custom tool arguments
-- `--ssh-host <host>` - Remote SSH host
-- `--ssh-user <user>` - SSH username
-- `--ssh-key <path>` - SSH private key path
-
-## 🔧 Common Commands
-
-```bash
-# Show all available tools
-./vult.sh --tool show-versions
-
-# Cleanup network namespaces
-./vult.sh --cleanup-namespaces
-
-# Get help
-./vult.sh --help
-```
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file.
-
-## ⚠️ Disclaimer
-
-For authorized security testing only. Users are responsible for proper authorization.
-
-### Quick Setup
-```bash
-# Clone or download the project
-git clone <repository-url>
-cd vult
-
-# Make bash script executable
-chmod +x vult.sh
-
-# Verify scripts
-./vult.sh --help
-powershell -ExecutionPolicy Bypass -File "./vult.ps1" -Help
-```
-
-### Automatic Dependency Management
-**No manual setup required!** 🎉
-
-Vult automatically:
-- **Detects missing tools** when you run any scan
-- **Installs dependencies** automatically via package manager (apt/yum/pacman)
-- **Downloads binaries** for tools not available in repositories
-- **Handles special cases** like nuclei, rustscan, ffuf, gobuster from GitHub releases
-
-Simply run any tool and Vult will ensure all dependencies are available before execution.
-
-### SSH Key Setup
-```bash
-# Generate SSH key pair (if needed)
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/pentest_key
-
-# Copy public key to remote server
-ssh-copy-id -i ~/.ssh/pentest_key.pub user@remote-server
-
-# Set appropriate permissions
-chmod 600 ~/.ssh/pentest_key
-```
-
-<br>
-
-
-## ⚙️ Configuration
-
-### Environment Variables
-Set these environment variables for default SSH connection parameters:
-
-#### Linux/Bash
-```bash
-export REMOTE_HOST="your.pentest.server"
-export REMOTE_USER="kali"
-export SSH_KEY="/path/to/your/ssh/key"
-```
-
-#### Windows/PowerShell
-```powershell
-$env:REMOTE_HOST = "your.pentest.server"
-$env:REMOTE_USER = "kali"
-$env:SSH_KEY = "C:\path\to\your\ssh\key"
-```
-
-### SSH Configuration
-Add to `~/.ssh/config` for easier connection management:
-```
-Host pentest-box
-    HostName your.pentest.server
-    User kali
-    IdentityFile ~/.ssh/pentest_key
-    StrictHostKeyChecking no
-    UserKnownHostsFile /dev/null
-```
-
-<br>
-
-
-## 📖 Usage
-
-### Basic Syntax
-
-#### Bash (Local Execution on Kali/Pentest Systems)
-```bash
-./vult.sh --local --tool <tool> [--target <target>] [--iface <interface>]
-```
-
-#### Bash (Remote Execution via SSH)
-```bash
-./vult.sh --tool <tool> [--target <target>] [--iface <interface>] [--ssh-host <host>] [--ssh-user <user>] [--ssh-key <path>]
-```
-
-#### PowerShell (Always Remote via SSH)
-```powershell
-.\vult.ps1 -Tool <tool> [-Target <target>] [-Iface <interface>] [-SshHost <host>] [-SshUser <user>] [-SshKey <path>]
-```
-
-### Execution Modes
-
-**🖥️ Local Execution (use --local flag)**
-```bash
-# Run directly on Kali/pentest systems
-./vult.sh --local --tool nikto --target https://example.com
-./vult.sh --local --tool quick-discovery --target 10.0.1.0/24 --iface eth0
-```
-
-**📡 Remote Execution (default)**
-```bash
-# Run via SSH from any system
-./vult.sh --tool nikto --target https://example.com --ssh-host kali-box
-./vult.sh --tool quick-discovery --target 10.0.1.0/24 --iface eth0
-```
 
 ### Common Usage Examples
 
@@ -337,6 +208,101 @@ Host pentest-box
 
 # Custom tool execution
 ./vult.sh --tool gobuster --target https://example.com --args "dir -w /custom/wordlist.txt -x php,html"
+```
+
+### Options
+- `--local` - Run locally (default: remote via SSH)
+- `--tool <name>` - Security tool to run
+- `--target <target>` - Target IP/URL/network
+- `--iface <interface>` - Network interface for isolation
+- `--args "<args>"` - Custom tool arguments
+- `--ssh-host <host>` - Remote SSH host
+- `--ssh-user <user>` - SSH username
+- `--ssh-key <path>` - SSH private key path
+
+## 🔧 Common Commands
+
+```bash
+# Show all available tools
+./vult.sh --tool show-versions
+
+# Cleanup network namespaces
+./vult.sh --cleanup-namespaces
+
+# Get help
+./vult.sh --help
+```
+
+
+
+### Quick Setup
+```bash
+# Clone or download the project
+git clone <repository-url>
+cd vult
+
+# Make bash script executable
+chmod +x vult.sh
+
+# Verify scripts
+./vult.sh --help
+powershell -ExecutionPolicy Bypass -File "./vult.ps1" -Help
+```
+
+### Automatic Dependency Management
+**No manual setup required!** 🎉
+
+Vult automatically:
+- **Detects missing tools** when you run any scan
+- **Installs dependencies** automatically via package manager (apt/yum/pacman)
+- **Downloads binaries** for tools not available in repositories
+- **Handles special cases** like nuclei, rustscan, ffuf, gobuster from GitHub releases
+
+Simply run any tool and Vult will ensure all dependencies are available before execution.
+
+### SSH Key Setup
+```bash
+# Generate SSH key pair (if needed)
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/pentest_key
+
+# Copy public key to remote server
+ssh-copy-id -i ~/.ssh/pentest_key.pub user@remote-server
+
+# Set appropriate permissions
+chmod 600 ~/.ssh/pentest_key
+```
+
+<br>
+
+
+## ⚙️ Configuration
+
+### Environment Variables
+Set these environment variables for default SSH connection parameters:
+
+#### Linux/Bash
+```bash
+export REMOTE_HOST="your.pentest.server"
+export REMOTE_USER="kali"
+export SSH_KEY="/path/to/your/ssh/key"
+```
+
+#### Windows/PowerShell
+```powershell
+$env:REMOTE_HOST = "your.pentest.server"
+$env:REMOTE_USER = "kali"
+$env:SSH_KEY = "C:\path\to\your\ssh\key"
+```
+
+### SSH Configuration
+Add to `~/.ssh/config` for easier connection management:
+```
+Host pentest-box
+    HostName your.pentest.server
+    User kali
+    IdentityFile ~/.ssh/pentest_key
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
 ```
 
 <br>
