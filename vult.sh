@@ -1016,7 +1016,7 @@ case "$TOOL" in
     if [[ -n "$ARGS" ]]; then
       cmd="nikto -host $TARGET $ARGS"
     else
-      cmd="nikto -host $TARGET -useragent 'Mozilla/5.0' -Format txt"
+      cmd="nikto -host $TARGET -useragent 'Mozilla/5.0'"
     fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
