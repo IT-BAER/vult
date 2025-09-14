@@ -980,7 +980,7 @@ fi
 case "$TOOL" in
   quick-discovery)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <cidr>"; usage; exit 1; fi
-    cmd="nmap -sn --color=always $TARGET"
+    cmd="nmap -sn $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -988,7 +988,7 @@ case "$TOOL" in
     ;;
   full-tcp)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <targets>"; usage; exit 1; fi
-    cmd="nmap -sC -sV -T4 --color=always $TARGET"
+    cmd="nmap -sC -sV -T4 $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -996,7 +996,7 @@ case "$TOOL" in
     ;;
   specific-ports)
     if [[ -z "$TARGET" || -z "$PORTS" ]]; then echo "Missing --target <target> and/or --ports <ports>"; usage; exit 1; fi
-    cmd="nmap -sC -sV -p $PORTS --color=always $TARGET"
+    cmd="nmap -sC -sV -p $PORTS $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1004,7 +1004,7 @@ case "$TOOL" in
     ;;
   udp-scan)
     if [[ -z "$TARGET" ]]; then echo "Missing --target <target>"; usage; exit 1; fi
-    cmd="nmap -sU --top-ports 100 --color=always $TARGET"
+    cmd="nmap -sU --top-ports 100 $TARGET"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1063,12 +1063,7 @@ case "$TOOL" in
     ;;
   custom-nmap)
     if [[ -z "$ARGS" ]]; then echo "Missing --args \"<nmap-args>\""; usage; exit 1; fi
-    # Add color flag if not already present in custom args
-    if [[ "$ARGS" != *"--color"* ]]; then
-      cmd="nmap --color=always $ARGS"
-    else
-      cmd="nmap $ARGS"
-    fi
+    cmd="nmap $ARGS"
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
     fi
@@ -1121,7 +1116,7 @@ case "$TOOL" in
     if [[ -n "$ARGS" ]]; then
       cmd="gobuster $ARGS -u $TARGET"
     else
-      cmd="gobuster dir -w /usr/share/wordlists/dirb/common.txt -u $TARGET --color"
+      cmd="gobuster dir -w /usr/share/wordlists/dirb/common.txt -u $TARGET"
     fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
@@ -1167,7 +1162,7 @@ case "$TOOL" in
     if [[ -n "$ARGS" ]]; then
       cmd="nuclei -u $TARGET $ARGS"
     else
-      cmd="nuclei -u $TARGET -t cves/ -t vulnerabilities/ -silent -nc"
+      cmd="nuclei -u $TARGET -t cves/ -t vulnerabilities/"
     fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
