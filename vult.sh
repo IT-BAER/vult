@@ -682,6 +682,10 @@ exec_in_netns() {
   # Generate unique namespace name
   local netns_name="pentest_${iface}_$$"
   
+  # Store cleanup info in global variables for trap handler access
+  export VULT_CLEANUP_IFACE="$iface"
+  export VULT_CLEANUP_NETNS="$netns_name"
+  
   # Get complete interface configuration before moving it
   local source_ip=$(ip addr show $iface 2>/dev/null | grep 'inet ' | awk '{print $2}' | head -1)
   local broadcast=$(ip addr show $iface 2>/dev/null | grep 'inet ' | grep 'brd ' | awk '{for(i=1;i<=NF;i++) if($i=="brd") print $(i+1)}' | head -1)
@@ -689,6 +693,13 @@ exec_in_netns() {
   local gateway=$(ip route show dev $iface 2>/dev/null | grep -oP 'via \K[^\s]+' | head -1)
   local iface_state=$(ip link show $iface 2>/dev/null | grep -o 'state [A-Z]*' | awk '{print $2}')
   local mac_addr=$(ip link show $iface 2>/dev/null | grep -oP 'link/ether \K[^\s]+')
+  
+  # Export variables for cleanup function access
+  export VULT_CLEANUP_SOURCE_IP="$source_ip"
+  export VULT_CLEANUP_BROADCAST="$broadcast"
+  export VULT_CLEANUP_SCOPE="$scope"
+  export VULT_CLEANUP_GATEWAY="$gateway"
+  export VULT_CLEANUP_IFACE_STATE="$iface_state"
   
   # Get the complete inet line for accurate restoration and extract ALL attributes
   local inet_line=$(ip addr show $iface 2>/dev/null | grep 'inet ' | head -1)
@@ -723,6 +734,11 @@ exec_in_netns() {
     fi
   fi
   
+  # Export additional variables for cleanup function
+  export VULT_CLEANUP_INET_LINE="$inet_line"
+  export VULT_CLEANUP_ADDITIONAL_ATTRS="$additional_attrs"
+  export VULT_CLEANUP_IS_DYNAMIC="$is_dynamic"
+  
   if [[ -z "$source_ip" ]]; then
     echo "[WARN] Interface $iface not found or has no IP, running command normally"
     eval "$cmd"
@@ -738,25 +754,46 @@ exec_in_netns() {
   trap cleanup_netns EXIT INT TERM QUIT
 
   # Enhanced cleanup function that saves/restores interface state
-  local cleanup_success=0
   cleanup_netns() {
-    if [[ $cleanup_success -eq 1 ]]; then
+    # Use the global variables set by exec_in_netns, with safe defaults
+    local iface="${VULT_CLEANUP_IFACE:-}"
+    local netns_name="${VULT_CLEANUP_NETNS:-}"
+    local source_ip="${VULT_CLEANUP_SOURCE_IP:-}"
+    local broadcast="${VULT_CLEANUP_BROADCAST:-}"
+    local scope="${VULT_CLEANUP_SCOPE:-}"
+    local gateway="${VULT_CLEANUP_GATEWAY:-}"
+    local iface_state="${VULT_CLEANUP_IFACE_STATE:-}"
+    local inet_line="${VULT_CLEANUP_INET_LINE:-}"
+    local additional_attrs="${VULT_CLEANUP_ADDITIONAL_ATTRS:-}"
+    local is_dynamic="${VULT_CLEANUP_IS_DYNAMIC:-false}"
+    
+    # If no cleanup variables are set, skip cleanup silently
+    # (This happens when cleanup already completed or on normal script exit)
+    if [[ -z "$iface" || -z "$netns_name" ]]; then
+      return 0
+    fi
+    
+    # Use a simple file-based lock to avoid duplicate cleanup
+    local cleanup_lock_file="/tmp/vult_cleanup_${netns_name}.lock"
+    if [[ -f "$cleanup_lock_file" ]]; then
       echo "[INFO] Cleanup already performed for $iface"
       return  # Avoid duplicate cleanup
     fi
-    cleanup_success=1
+    touch "$cleanup_lock_file"
     
     echo "[INFO] Restoring interface '$iface' to main namespace (netns: '$netns_name')"
     
     # Debug: Check if variables are available
     if [[ -z "$iface" || -z "$netns_name" ]]; then
       echo "[WARN] Missing variables in cleanup - iface: '$iface', netns: '$netns_name'"
+      rm -f "$cleanup_lock_file"
       return 1
     fi
     
     # Emergency cleanup: Check if namespace exists first
     if ! sudo ip netns list 2>/dev/null | grep -q "$netns_name"; then
       echo "[INFO] Namespace $netns_name already cleaned up"
+      rm -f "$cleanup_lock_file"
       return 0
     fi
     
@@ -827,6 +864,12 @@ exec_in_netns() {
     # Clean up any veth pairs
     sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o $iface -j MASQUERADE 2>/dev/null || true
     sudo ip link del veth0_$netns_name 2>/dev/null || true
+    
+    # Clean up lock file and global variables
+    rm -f "/tmp/vult_cleanup_${netns_name}.lock"
+    unset VULT_CLEANUP_IFACE VULT_CLEANUP_NETNS VULT_CLEANUP_SOURCE_IP
+    unset VULT_CLEANUP_BROADCAST VULT_CLEANUP_SCOPE VULT_CLEANUP_GATEWAY
+    unset VULT_CLEANUP_IFACE_STATE VULT_CLEANUP_INET_LINE VULT_CLEANUP_ADDITIONAL_ATTRS VULT_CLEANUP_IS_DYNAMIC
     
     echo "[INFO] Interface $iface restored successfully"
   }
@@ -1140,7 +1183,7 @@ case "$TOOL" in
     if [[ -n "$ARGS" ]]; then
       cmd="whatweb $ARGS $TARGET"
     else
-      cmd="whatweb --color=always $TARGET"
+      cmd="whatweb $TARGET"
     fi
     if [[ -n "$IFACE" ]]; then
       cmd=$(force_interface_wrapper "$IFACE" "$cmd")
