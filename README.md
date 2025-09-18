@@ -41,7 +41,7 @@ Simple wrapper for running 30+ security & vulnerability scanning tools locally o
 ## 🛠️ Installation
 
 ```bash
-git clone <repository>
+git clone https://github.com/IT-BAER/vult.git
 cd vult
 chmod +x vult.sh
 ```
